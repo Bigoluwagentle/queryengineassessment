@@ -1,6 +1,6 @@
 require('dotenv').config();
-const { pool, initDb } = require('./src/db');
-const { generateUUIDv7 } = require('./src/utils/uuid');
+const { pool, initDb } = require('../src/db');
+const { generateUUIDv7 } = require('../src/utils/uuid');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -23,7 +23,6 @@ function downloadJSON(url) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith('https') ? https : http;
     protocol.get(url, (res) => {
-      // Follow redirects
       if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307) {
         return downloadJSON(res.headers.location).then(resolve).catch(reject);
       }
@@ -36,6 +35,7 @@ function downloadJSON(url) {
       res.on('data', (chunk) => (data += chunk));
       res.on('end', () => {
         try {
+          // Handle Google Drive's "virus scan warning" HTML page
           if (data.trim().startsWith('<')) {
             reject(new Error('Received HTML instead of JSON — Google Drive may require confirmation. Use --file flag with a local copy.'));
             return;
