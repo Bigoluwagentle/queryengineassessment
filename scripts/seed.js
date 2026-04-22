@@ -1,6 +1,6 @@
 require('dotenv').config();
-const { pool, initDb } = require('../src/db');
-const { generateUUIDv7 } = require('../src/utils/uuid');
+const { pool, initDb } = require('./src/db');
+const { generateUUIDv7 } = require('./src/utils/uuid');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -23,6 +23,7 @@ function downloadJSON(url) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith('https') ? https : http;
     protocol.get(url, (res) => {
+      // Follow redirects
       if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 307) {
         return downloadJSON(res.headers.location).then(resolve).catch(reject);
       }
@@ -94,7 +95,6 @@ async function seed() {
     const raw = fs.readFileSync(filePath, 'utf8');
     profiles = JSON.parse(raw);
   } else {
-    // Download from Google Drive
     console.log(`📥 Downloading profiles.json from Google Drive...`);
     console.log(`   URL: ${GDRIVE_CONFIRM_URL}\n`);
     try {
@@ -158,7 +158,7 @@ async function seed() {
 
       const inserted = await insertBatch(client, valid);
       totalInserted += inserted;
-      totalSkipped += valid.length - inserted; // ON CONFLICT DO NOTHING skips
+      totalSkipped += valid.length - inserted; 
 
       const progress = Math.min(i + BATCH_SIZE, profiles.length);
       process.stdout.write(`\r📊 Progress: ${progress}/${profiles.length} processed...`);
